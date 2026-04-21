@@ -224,8 +224,7 @@ export default function App() {
               <h2 className="text-lg font-semibold text-white">OpenAI API 키 입력</h2>
             </div>
             <p className="text-sm text-gray-400 mb-6">
-              테크 데모 시연을 위해 발급받은 API 키를 입력해주세요. <br/>
-              (키는 서버에 저장되지 않고 현재 브라우저 메모리에만 유지됩니다.)
+              테크 데모 시연을 위해 발급받은 API 키를 입력해주세요.
             </p>
             <form onSubmit={handleKeySubmit} className="flex gap-2">
               <input 
