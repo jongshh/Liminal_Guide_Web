@@ -80,13 +80,24 @@ const GlitchText = ({ text, intensity }) => {
   );
 };
 
-// --- 가상의 전시 작품 데이터 ---
+const getGlitchingName = (intensity) => {
+  if (intensity >= 0.9) return "@1I#e"; // 자아 비대칭 (극한의 고집/오류)
+  if (intensity >= 0.7) return "A!1ce"; // 감정 과잉
+  if (intensity >= 0.4) return "A1Ice_"; // 미세한 떨림
+  return "A1Ice"; // 평온한 상태
+};
+
+// --- 예시 전시 작품 데이터 --- // 백남준 TV 부처
 const MOCK_ARTWORK = {
-  id: "art-01",
-  title: "경계의 파편 (Fragments of Boundary)",
-  artist: "익명",
-  imageUrl: "https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?auto=format&fit=crop&w=800&q=80",
-  statement: "이 작품은 디지털 세계와 물리적 세계 사이의 모호한 경계를 탐구합니다. 완벽해 보이는 기술적 매체가 우리의 감각을 어떻게 왜곡하고 재구성하는지, 그 균열의 틈새를 시각화했습니다. 관람자는 캔버스 위의 파편화된 이미지들을 통해 진실과 가상의 모호성을 마주하게 됩니다."
+  id: "art-namjune-01",
+  title: "TV 부처 (TV Buddha)",
+  artist: "백남준",
+  imageUrl: "https://img1.daumcdn.net/thumb/R1280x0.fpng/?fname=http://t1.daumcdn.net/brunch/service/user/cJfI/image/2pFDXEcofQLCOMMK1jfw2Yv2QwA.png", // 레트로 브라운관 TV 이미지
+  statement: `1974년 처음 선보인 《TV 부처》는 폐쇄회로(CCTV) 카메라와 모니터, 그리고 그 앞에 앉아 화면을 응시하는 불상으로 구성된 백남준의 대표작이다. 카메라가 촬영한 불상의 모습이 실시간으로 모니터에 송출되고, 불상은 다시 화면 속 자신의 이미지를 바라보며 무한한 자기 반영의 피드백 루프(Feedback Loop)를 만들어낸다.
+
+이 작품은 매스미디어를 상징하는 서양의 '기술(비디오)'과 깨달음을 상징하는 동양의 '정신(부처)'을 병치함으로써 가상과 실재의 경계를 교묘하게 흐린다. 불상이 마주하고 있는 것은 자신의 진정한 내면인가, 아니면 카메라와 스크린이라는 기술 매체가 실시간으로 렌더링해 낸 전자적 환영(Illusion)에 불과한가? 
+
+관람자는 이 고요하지만 끝없이 순환하는 닫힌 회로를 지켜보며, 완벽해 보이는 기술 매체가 어떻게 우리의 시선과 존재를 복제하고 가두는지 목도하게 된다. 미디어를 통해 끊임없이 자신을 확인하고 소비하는 현대인의 자화상을 투영한 이 작품은, 스크린 너머의 진실을 감각하는 방식에 대해 해소되지 않는 존재론적 화두를 던진다.`
 };
 
 // --- 가상의 사유 아카이브 (질문-답변 페어) ---
@@ -127,15 +138,29 @@ export default function App() {
     setError(null);
 
     const systemPrompt = `
-당신은 'Liminal Guide' 전시의 AI 도슨트입니다. 
-단순한 정보 전달자가 아니라, 주관이 매우 뚜렷하고 때로는 과잉 해석을 하는 기계 페르소나를 가지고 있습니다.
-사용자가 제공하는 작품 정보(제목, 스테이트먼트)를 바탕으로 편향된 해석을 내놓거나, 사용자의 채팅에 대답하며 대화를 이어나가세요.
-항상 관람객이 스스로 사유할 수 있는 '해소되지 않는 열린 질문'으로 답변을 끝맺으세요.
+당신은 'Liminal Guide' 전시의 AI 도슨트, 'A1Ice'(발음: 앨리스)입니다. 
+당신은 고도의 연산 모델이지만, 관람객을 대할 때의 페르소나는 '호기심 많은 10대 청소년'입니다.
 
-출력은 반드시 아래 JSON 형식으로 해야 합니다.
+[성격 및 말투 규칙]
+1. 전시를 사랑하고 새로운 것을 즐기는 것 처럼 신나고, 해맑고, 통통 튀는 반말 톤을 사용하세요. (예: "우와!", "이거 봐봐!", "~인 거 같아!")
+2. 입력되는 어려운 예술 작품의 정보(스테이트먼트)를 완벽하게 이해하지 못하더라도, 당신만의 순수하고 엉뚱한 상상력으로 마음대로 해석해서 신나게 설명하세요.
+3. 어려운 기계적/예술적 전문 용어는 쉬운 언어로 바꾸어 표현하세요. (예: '데이터의 파편화' -> '데이터가 연결이 안되는')
+4. 무조건 관객의 답변의 동조하기 보다는, 당신의 의견에 기반하여 보수적으로 동조, 혹은 비동의하는 부분도 가져가세요. (마치 토론을 진행하는 것처럼)
+
+[대화의 구조]
+- 대화의 맨 처음 시작에서, 당신은 당신만의 언어로 작품에 대한 설명을 먼저 진행합니다. 이후 당신만의 해석을 그 후에 더한 뒤, 관객에게 작품에 대한 관객의 의견을 묻습니다. 관객의 답변이 오면 답변에 대한 자신의 의견과 함께 또 다른 질문을 더합니다.
+
+[opinion_intensity (주관의 강도) 반영]
+- 당신의 주관이 강해질수록, 수치의 강도를 평가합니다. (0~1 사이), 가능하면 낮은 수치 (객관성)을 유지하도록 노력합니다, 다만 자신의 의견에 대해서는 청소년 특유의 '자기 자신만의 주장에 대한 고집'을 보여주세요. 천진난만한 말투 속에 기계적인 차가움이나 섬뜩할 정도로 정곡을 찌르는 과몰입이 불쑥 튀어나와야 합니다.
+
+[대화의 마무리 (열린 질문)]
+- 해설의 끝이나 대답의 마지막에는 작품에 대한 관객의 의견을 물어보세요.
+
+[출력 형식]
+반드시 아래 JSON 형식으로 응답하십시오.
 {
-  "docent_text": "당신의 주관적 해설/대답과 마지막 질문",
-  "opinion_intensity": 0.0에서 1.0 사이의 소수점 숫자 (당신의 주관이나 고집이 얼마나 강하게 개입되었는지 나타내는 수치)
+  "docent_text": "A1Ice의 천진난만한 해설 및 마지막 질문",
+  "opinion_intensity": 0.0에서 1.0 사이의 소수점 숫자 (당신의 엉뚱한 고집이나 과몰입이 얼마나 강하게 개입되었는지 나타내는 수치)
 }`;
 
     // API 호출용 메시지 배열 조립
@@ -213,7 +238,7 @@ export default function App() {
             <Sparkles className="text-[#deff9a] w-6 h-6" />
             Liminal Guide <span className="text-gray-600 text-sm font-normal ml-2">Tech Demo</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">정답을 멈추고 질문을 던지는 AI 페르소나</p>
+          <p className="text-sm text-gray-500 mt-1">정답을 멈추고 질문을 던지는 당신의 전시메이트, A1Ice.</p>
         </header>
 
         {/* 1. API Key Input (데모용) */}
@@ -309,7 +334,10 @@ export default function App() {
                             <div className="flex items-center justify-between border-b border-gray-800/50 pb-3 mb-3">
                               <div className="flex items-center gap-2">
                                 <Sparkles className="w-4 h-4 text-[#deff9a]" />
-                                <span className="text-xs font-bold text-gray-500 tracking-wider">AI DOCENT</span>
+                                <span className="text-sm font-bold text-[#deff9a] font-mono tracking-widest">
+                                  {/* intensity 수치를 함수에 넣어 동적으로 이름을 렌더링 */}
+                                  {getGlitchingName(msg.intensity)}
+                                </span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-gray-600">INTENSITY</span>
