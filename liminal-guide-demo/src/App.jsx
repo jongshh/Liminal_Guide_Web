@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Key, Terminal, Activity, Send, Settings, EyeOff } from 'lucide-react';
+import { Key, Terminal, Activity, Send, Settings, EyeOff, ChevronDown } from 'lucide-react';
 import ARTWORKS from './data/artworks.json';
 import ARCHIVE_SEED from './data/archiveSeed.json';
 
 // --- 커스텀 CSS (글리치 효과 및 레이아웃 스타일) ---
 const CustomStyles = () => (
-  <style dangerouslySetInnerHTML={{__html: `
+  <style dangerouslySetInnerHTML={{
+    __html: `
     @keyframes rgb-split {
       0% { text-shadow: 2px 0 #ff003c, -2px 0 #00eaff; }
       5% { text-shadow: -2px 0 #ff003c, 2px 0 #00eaff; }
@@ -85,20 +86,20 @@ const GlitchText = ({ text, instability }) => {
     const parts = text.split(/(\s+)/);
     return parts.map((part, i) => {
       if (part.trim() === '') return <span key={i}>{part}</span>;
-      
+
       const shouldZalgo = instability > 40 && Math.random() < (instability / 200);
       const shouldSplit = instability > 20 && Math.random() < (instability / 100);
-      
+
       let displayPart = part;
       if (shouldZalgo) {
         displayPart = part.split('').map(c => Math.random() > 0.5 ? c + '̸̡͍' : c + '҉̡͈').join('');
       }
-      
+
       return (
-        <span 
-          key={i} 
+        <span
+          key={i}
           className="inline-block"
-          style={{ 
+          style={{
             animation: shouldSplit ? `rgb-split ${Math.random() * 2 + 1}s infinite linear` : 'none',
             transform: instability > 70 && Math.random() < 0.1 ? `skewX(${Math.random() * 20 - 10}deg)` : 'none'
           }}
@@ -119,33 +120,33 @@ const GlitchText = ({ text, instability }) => {
 // --- TTS 자체 음성 왜곡 (청크 분할 기법) ---
 const speakText = (text, instability) => {
   if (!('speechSynthesis' in window)) return;
-  
+
   // 기존 큐 지우기
   window.speechSynthesis.cancel();
-  
+
   if (instability < 30) {
     // 30 미만일 때는 정상적으로 한 번에 재생
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ko-KR';
     utterance.pitch = 1;
-    utterance.rate = 1.1; 
+    utterance.rate = 1.1;
     window.speechSynthesis.speak(utterance);
     return;
   }
-  
+
   // 불안정성이 30 이상일 경우: 텍스트를 청크 단위로 쪼개어 재생
   // Phase 2 (30~60)는 약한 왜곡, Phase 3 (60+)는 강한 왜곡
   const words = text.split(' ');
-  const chunkSize = instability < 60 ? 4 : 2; 
+  const chunkSize = instability < 60 ? 4 : 2;
   const chunks = [];
   for (let i = 0; i < words.length; i += chunkSize) {
     chunks.push(words.slice(i, i + chunkSize).join(' '));
   }
-  
+
   chunks.forEach((chunk) => {
     const utterance = new SpeechSynthesisUtterance(chunk);
     utterance.lang = 'ko-KR';
-    
+
     if (instability < 60) {
       // Phase 2: 약간의 톤 떨림과 속도 변화
       utterance.pitch = 0.8 + (Math.random() * 0.4); // 0.8 ~ 1.2
@@ -154,13 +155,13 @@ const speakText = (text, instability) => {
       // Phase 3: 극단적인 피치 및 속도 변형으로 고장난 로봇 연출
       utterance.pitch = 0.1 + (Math.random() * 1.9); // 0.1 ~ 2.0
       utterance.rate = 0.5 + (Math.random() * 1.0); // 0.5 ~ 1.5
-      
+
       // 심각한 불안정성에서는 일부 청크의 볼륨을 약간 줄임
       if (instability > 80 && Math.random() < 0.2) {
         utterance.volume = 0.5;
       }
     }
-    
+
     window.speechSynthesis.speak(utterance);
   });
 };
@@ -169,20 +170,21 @@ const speakText = (text, instability) => {
 export default function App() {
   const [apiKey, setApiKey] = useState('');
   const [isKeySaved, setIsKeySet] = useState(false);
-  
-  const [phase, setPhase] = useState(1); 
-  const [chatCount, setChatCount] = useState(0); 
-  
+
+  const [phase, setPhase] = useState(1);
+  const [chatCount, setChatCount] = useState(0);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState([]); 
-  const [chatInput, setChatInput] = useState(''); 
+  const [messages, setMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
   const [error, setError] = useState(null);
-  
+
   const [showDevControls, setShowDevControls] = useState(false);
   const [selectedArtworkId, setSelectedArtworkId] = useState(ARTWORKS[0].id);
   const [archiveData, setArchiveData] = useState(ARCHIVE_SEED);
   const [sessionUserId] = useState(() => Math.floor(Math.random() * 900) + 100);
-  
+  const [showArtworkPanel, setShowArtworkPanel] = useState(false);
+
   const messagesEndRef = useRef(null);
 
   const activeArtwork = useMemo(() => ARTWORKS.find(a => a.id === selectedArtworkId), [selectedArtworkId]);
@@ -197,7 +199,7 @@ export default function App() {
     if (phase === 2) maxVal = 66;
     if (phase === 3) maxVal = 100;
 
-    const x = Math.min(chatCount, 70); 
+    const x = Math.min(chatCount, 70);
     const ratio = 1 - Math.pow(1 - x / 70, 2);
     return Math.floor(maxVal * ratio);
   }, [phase, chatCount]);
@@ -207,11 +209,24 @@ export default function App() {
     if (apiKey.trim().length > 20) setIsKeySet(true);
   };
 
+  // 아카이브 실시간 저장 (dev 서버 환경)
+  const persistArchiveEntry = async (entry) => {
+    try {
+      await fetch('/api/archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+    } catch (e) {
+      // 프로덕션 환경에서는 실패해도 무시 (API 없음)
+    }
+  };
+
   const handleArtworkSelect = (id) => {
     if (id === selectedArtworkId) return;
     setSelectedArtworkId(id);
     const newArt = ARTWORKS.find(a => a.id === id);
-    
+
     // 작품 변경 시 자연스러운 컨텍스트 전환 메시지
     const transitionMsg = `(관객이 <${newArt.title}> 작품을 가리키며 이 작품에 대해 이야기하고자 합니다.)`;
     sendMessage(transitionMsg, newArt);
@@ -228,8 +243,8 @@ export default function App() {
   };
 
   const sendMessage = async (userText = null, overrideArtwork = null) => {
-    if (instability >= 100) return; 
-    
+    if (instability >= 100) return;
+
     setIsLoading(true);
     setError(null);
 
@@ -248,24 +263,26 @@ export default function App() {
     let newMessages = [];
     if (userText) {
       apiMessages.push({ role: 'user', content: userText });
-      
+
       // 화면에 보여줄 때 괄호로 감싸인 컨텍스트 텍스트는 시스템 메시지로 분리 처리
       const isContextChange = userText.startsWith('(관객이');
       const role = isContextChange ? 'system_context' : 'user';
-      
+
       // 마진 오프셋을 한 번만 계산하여 영구 할당
       const randomMargin = instability > 40 ? `${Math.floor(Math.random() * (instability / 1.5))}px` : '0px';
 
-      newMessages.push({ 
-        id: Date.now(), 
-        role: role, 
+      newMessages.push({
+        id: Date.now(),
+        role: role,
         text: userText,
         marginOffset: randomMargin
       });
-      
+
       if (!isContextChange) {
-        setChatCount(prev => prev + 1); 
-        setArchiveData(prev => [{ id: Date.now() + Math.random(), text: `> USER_${sessionUserId}: ${userText}` }, ...prev]);
+        setChatCount(prev => prev + 1);
+        const newEntry = { id: Date.now() + Math.random(), text: `> USER_${sessionUserId}: ${userText}` };
+        setArchiveData(prev => [newEntry, ...prev]);
+        persistArchiveEntry(newEntry);
       }
     }
 
@@ -290,16 +307,16 @@ export default function App() {
 
       const data = await response.json();
       const parsedContent = JSON.parse(data.choices[0].message.content);
-      
+
       const assistantMargin = instability > 40 ? `${Math.floor(Math.random() * (instability / 1.5))}px` : '0px';
 
-      setMessages(prev => [...prev, { 
+      setMessages(prev => [...prev, {
         id: Date.now() + 1,
-        role: 'assistant', 
+        role: 'assistant',
         text: parsedContent.docent_text,
         marginOffset: assistantMargin
       }]);
-      
+
       speakText(parsedContent.docent_text, instability);
 
     } catch (err) {
@@ -329,7 +346,7 @@ export default function App() {
           <p className="text-[#555] text-sm mt-4">시스템이 더 이상 응답하지 않습니다.</p>
         </div>
         <div className="fixed bottom-4 left-4 z-50">
-          <button onClick={() => {setPhase(1); setChatCount(0); window.speechSynthesis.cancel();}} className="text-xs text-[#444] hover:text-[#888] underline">
+          <button onClick={() => { setPhase(1); setChatCount(0); window.speechSynthesis.cancel(); }} className="text-xs text-[#444] hover:text-[#888] underline">
             [REBOOT TERMINAL]
           </button>
         </div>
@@ -340,18 +357,19 @@ export default function App() {
   // 4방향 티커를 위한 엘리먼트
   const renderTicker = (direction) => {
     const isHorizontal = direction === 'top' || direction === 'bottom';
+    // 모바일에서는 좌우 티커 숨기기
     const className = `absolute ${direction}-0 bg-[#0a0a0a] border-[#222] z-20 flex items-center overflow-hidden
-      ${isHorizontal ? 'w-full h-8 border-y' : 'h-full w-8 border-x top-0 flex-col'}
+      ${isHorizontal ? 'w-full h-8 border-y' : 'h-full w-8 border-x top-0 flex-col hidden md:flex'}
       ${direction === 'left' ? 'left-0' : direction === 'right' ? 'right-0' : ''}
     `;
     const innerClass = `ticker-container ${isHorizontal ? 'ticker-x' : 'ticker-y'}`;
-    
+
     return (
       <div className={className}>
         <div className={innerClass}>
           {[...archiveData.slice(0, 20), ...archiveData.slice(0, 20)].map((item, idx) => (
-            <span 
-              key={idx} 
+            <span
+              key={idx}
               className={`text-[10px] text-[#888] ${isHorizontal ? 'mx-8' : 'my-8 whitespace-nowrap'}`}
               style={!isHorizontal ? { writingMode: 'vertical-rl', textOrientation: 'mixed' } : {}}
             >
@@ -364,13 +382,13 @@ export default function App() {
   };
 
   return (
-    <div 
+    <div
       className="h-screen bg-[#0a0a0a] text-[#e5e5e5] p-2 overflow-hidden relative selection:bg-[#333] selection:text-white"
     >
       <CustomStyles />
       <div className="crt-overlay" />
       {instability > 20 && <div className="noise-bg" style={{ opacity: instability / 500 }} />}
-      
+
       {/* 4방향 Marginalia Ticker */}
       {renderTicker('top')}
       {renderTicker('bottom')}
@@ -378,11 +396,11 @@ export default function App() {
       {renderTicker('right')}
 
       {/* Main Content Box (Inside Tickers) */}
-      <div 
-        className="absolute top-8 bottom-8 left-8 right-8 bg-[#111] border border-[#222] p-4 flex flex-col z-10"
+      <div
+        className="absolute top-8 bottom-8 left-0 right-0 md:left-8 md:right-8 bg-[#111] border border-[#222] p-2 md:p-4 flex flex-col z-10"
         style={{ animation: instability > 50 ? `screen-jitter ${200 / instability}s infinite` : 'none' }}
       >
-        
+
         {/* Header */}
         <header className="border-b border-[#222] pb-3 mb-4 flex justify-between items-end shrink-0">
           <div>
@@ -408,7 +426,7 @@ export default function App() {
                 <h2 className="font-semibold text-white">System Authentication</h2>
               </div>
               <form onSubmit={handleKeySubmit} className="flex flex-col gap-4">
-                <input 
+                <input
                   type="password"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
@@ -423,15 +441,15 @@ export default function App() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
-            
+          <div className="flex-1 flex flex-col md:flex-row gap-2 md:gap-6 overflow-hidden">
+
             {/* Left: Chat Window */}
             <div className="flex-1 flex flex-col border border-[#222] bg-black/40 relative h-full">
               <div className="bg-[#1a1a1a] px-4 py-2 border-b border-[#222] flex justify-between items-center shrink-0">
                 <span className="text-xs font-mono text-[#888]">Conversation.log</span>
               </div>
-              
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+              <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6">
                 {messages.length === 0 ? (
                   <div className="text-center pt-20">
                     <p className="text-[#666] text-sm mb-4">안내를 시작하려면 아래 버튼을 누르세요.</p>
@@ -443,7 +461,7 @@ export default function App() {
                   messages.map((msg) => {
                     const isSystemContext = msg.role === 'system_context';
                     const isUser = msg.role === 'user';
-                    
+
                     if (isSystemContext) {
                       return (
                         <div key={msg.id} className="text-center my-4">
@@ -455,11 +473,11 @@ export default function App() {
                     }
 
                     return (
-                      <div 
-                        key={msg.id} 
+                      <div
+                        key={msg.id}
                         className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div 
+                        <div
                           className={`max-w-[80%] p-4 text-sm ${isUser ? 'bg-[#1a1a1a] border border-[#222] text-[#ccc]' : 'border-l-2 border-[#555] bg-transparent'}`}
                           style={{
                             marginLeft: !isUser ? msg.marginOffset : '0px',
@@ -490,7 +508,7 @@ export default function App() {
 
               <form onSubmit={handleChatSubmit} className="border-t border-[#222] p-3 flex bg-[#111] shrink-0">
                 <span className="p-3 text-[#555] font-mono">{'>'}</span>
-                <input 
+                <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
@@ -498,7 +516,7 @@ export default function App() {
                   className="flex-1 bg-transparent border-none text-[#e5e5e5] focus:outline-none focus:ring-0 placeholder-[#444] text-sm"
                   placeholder="RAI와 대화하기..."
                 />
-                <button 
+                <button
                   type="submit"
                   disabled={isLoading || !chatInput.trim()}
                   className="px-4 text-[#666] hover:text-white disabled:opacity-30"
@@ -507,54 +525,65 @@ export default function App() {
                 </button>
               </form>
             </div>
-            
+
             {/* Right: Artwork Info & List */}
-            <div className="w-full md:w-80 flex flex-col gap-4 overflow-y-auto shrink-0 pr-2">
-              
-              {/* Current Artwork Detail */}
-              <div 
-                className="border border-[#222] bg-[#111] p-2 transition-all duration-700 relative overflow-hidden"
-                style={{
-                  filter: instability > 50 ? `blur(${(instability-50)/30}px)` : 'none'
-                }}
+            <div className="w-full md:w-80 flex flex-col gap-2 md:gap-4 shrink-0 md:overflow-y-auto md:pr-2">
+
+              {/* 모바일 토글 버튼 */}
+              <button
+                onClick={() => setShowArtworkPanel(!showArtworkPanel)}
+                className="md:hidden flex items-center justify-between w-full border border-[#222] bg-[#111] px-3 py-2 text-xs text-[#888]"
               >
-                {instability > 30 && <div className="absolute inset-0 bg-red-900/10 mix-blend-color-burn pointer-events-none z-10" />}
-                <div className="relative h-48 w-full bg-black mb-3">
-                  <img 
-                    src={activeArtwork.imageUrl} 
-                    alt={activeArtwork.title} 
-                    className="w-full h-full object-cover opacity-70 grayscale transition-opacity hover:grayscale-0 duration-500"
-                  />
-                  <div className="absolute bottom-0 left-0 w-full p-2 bg-gradient-to-t from-black to-transparent">
-                    <h2 className="text-white font-bold text-sm">{activeArtwork.title}</h2>
-                    <p className="text-[10px] text-[#888]">{activeArtwork.artist}</p>
+                <span>{activeArtwork.title}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${showArtworkPanel ? 'rotate-180' : ''}`} />
+              </button>
+
+              <div className={`${showArtworkPanel ? 'flex' : 'hidden'} md:flex flex-col gap-2 md:gap-4`}>
+                {/* Current Artwork Detail */}
+                <div
+                  className="border border-[#222] bg-[#111] p-2 transition-all duration-700 relative overflow-hidden"
+                  style={{
+                    filter: instability > 50 ? `blur(${(instability - 50) / 30}px)` : 'none'
+                  }}
+                >
+                  {instability > 30 && <div className="absolute inset-0 bg-red-900/10 mix-blend-color-burn pointer-events-none z-10" />}
+                  <div className="relative h-32 md:h-48 w-full bg-black mb-3">
+                    <img
+                      src={activeArtwork.imageUrl}
+                      alt={activeArtwork.title}
+                      className="w-full h-full object-cover opacity-70 grayscale transition-opacity hover:grayscale-0 duration-500"
+                    />
+                    <div className="absolute bottom-0 left-0 w-full p-2 bg-gradient-to-t from-black to-transparent">
+                      <h2 className="text-white font-bold text-sm">{activeArtwork.title}</h2>
+                      <p className="text-[10px] text-[#888]">{activeArtwork.artist}</p>
+                    </div>
+                  </div>
+                  <div className="px-2 pb-2">
+                    <p className="text-xs text-[#888] leading-relaxed line-clamp-4 hover:line-clamp-none transition-all">
+                      {activeArtwork.statement}
+                    </p>
                   </div>
                 </div>
-                <div className="px-2 pb-2">
-                  <p className="text-xs text-[#888] leading-relaxed line-clamp-4 hover:line-clamp-none transition-all">
-                    {activeArtwork.statement}
-                  </p>
-                </div>
-              </div>
 
-              {/* Artwork Selection List */}
-              <div className="flex flex-col gap-2">
-                <h3 className="text-[10px] font-mono text-[#666] uppercase tracking-widest border-b border-[#222] pb-1 mb-2">Exhibition List</h3>
-                {ARTWORKS.map(art => (
-                  <button 
-                    key={art.id}
-                    onClick={() => handleArtworkSelect(art.id)}
-                    className={`flex items-start gap-3 p-2 border text-left transition-colors
+                {/* Artwork Selection List */}
+                <div className="flex flex-col gap-2 max-h-64 md:max-h-96 overflow-y-auto">
+                  <h3 className="text-[10px] font-mono text-[#666] uppercase tracking-widest border-b border-[#222] pb-1 mb-2 sticky top-0 bg-[#111] z-10">Exhibition List</h3>
+                  {ARTWORKS.map(art => (
+                    <button
+                      key={art.id}
+                      onClick={() => { handleArtworkSelect(art.id); setShowArtworkPanel(false); }}
+                      className={`flex items-start gap-3 p-2 border text-left transition-colors
                       ${selectedArtworkId === art.id ? 'border-[#555] bg-[#1a1a1a]' : 'border-[#222] hover:border-[#444] opacity-50 hover:opacity-100'}
                     `}
-                  >
-                    <img src={art.imageUrl} className="w-12 h-12 object-cover grayscale brightness-75" alt={art.title} />
-                    <div className="flex-1 overflow-hidden">
-                      <p className="text-xs font-semibold text-white truncate">{art.title}</p>
-                      <p className="text-[10px] text-[#888]">{art.artist} · {art.year}</p>
-                    </div>
-                  </button>
-                ))}
+                    >
+                      <img src={art.imageUrl} className="w-12 h-12 object-cover grayscale brightness-75" alt={art.title} />
+                      <div className="flex-1 overflow-hidden">
+                        <p className="text-xs font-semibold text-white truncate">{art.title}</p>
+                        <p className="text-[10px] text-[#888]">{art.artist} · {art.year}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
             </div>
@@ -563,9 +592,19 @@ export default function App() {
         )}
       </div>
 
-      <button 
+      {/* Session User Badge */}
+      {isKeySaved && (
+        <div className="fixed bottom-4 right-4 md:bottom-12 md:right-12 z-[9998] flex items-center gap-2 bg-black/80 border border-[#333] px-3 py-1.5 text-[10px] font-mono text-[#666]">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          <span>USER_{sessionUserId}</span>
+          <span className="text-[#444]">|</span>
+          <span className="text-[#444]">SESSION ACTIVE</span>
+        </div>
+      )}
+
+      <button
         onClick={() => setShowDevControls(!showDevControls)}
-        className="fixed bottom-12 right-12 z-[9999] p-2 bg-black border border-[#333] text-[#666] hover:text-white rounded-full opacity-50 hover:opacity-100"
+        className="fixed bottom-12 right-12 z-[9999] p-2 bg-black border border-[#333] text-[#666] hover:text-white rounded-full opacity-50 hover:opacity-100 hidden md:block"
       >
         <Settings className="w-4 h-4" />
       </button>
@@ -573,13 +612,13 @@ export default function App() {
       {showDevControls && (
         <div className="fixed bottom-24 right-12 z-[9999] bg-black border border-[#444] p-5 w-72 shadow-2xl">
           <h3 className="text-sm font-bold border-b border-[#333] pb-2 mb-4 font-mono text-white">DEV CONTROLS</h3>
-          
+
           <div className="space-y-5 text-xs font-mono">
             <div>
               <label className="block text-[#888] mb-2">PHASE (Day 1-3)</label>
               <div className="flex gap-2">
                 {[1, 2, 3].map(p => (
-                  <button 
+                  <button
                     key={p}
                     onClick={() => setPhase(p)}
                     className={`flex-1 py-1.5 border transition-colors ${phase === p ? 'bg-white text-black border-white' : 'border-[#333] text-[#888] hover:border-[#666]'}`}
@@ -595,10 +634,10 @@ export default function App() {
                 <span>CHAT COUNT</span>
                 <span className="text-white">{chatCount}</span>
               </label>
-              <input 
-                type="range" 
-                min="0" max="70" 
-                value={chatCount} 
+              <input
+                type="range"
+                min="0" max="70"
+                value={chatCount}
                 onChange={(e) => setChatCount(parseInt(e.target.value))}
                 className="w-full accent-white"
               />
@@ -610,8 +649,8 @@ export default function App() {
                 Limit: {phase === 1 ? 33 : phase === 2 ? 66 : 100}%
               </p>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => { setPhase(1); setChatCount(0); setMessages([]); window.speechSynthesis.cancel(); }}
               className="w-full mt-4 border border-[#500] text-[#f55] hover:bg-[#500] hover:text-white py-2 transition-colors"
             >
@@ -620,7 +659,7 @@ export default function App() {
           </div>
         </div>
       )}
-      
+
     </div>
   );
 }
