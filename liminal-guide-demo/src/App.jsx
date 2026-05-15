@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Key, Terminal, Activity, Send, Settings, EyeOff } from 'lucide-react';
+import ARTWORKS from './data/artworks.json';
+import ARCHIVE_SEED from './data/archiveSeed.json';
 
 // --- 커스텀 CSS (글리치 효과 및 레이아웃 스타일) ---
 const CustomStyles = () => (
@@ -114,41 +116,6 @@ const GlitchText = ({ text, instability }) => {
   );
 };
 
-// --- 다중 작품 데이터 ---
-const MOCK_ARTWORKS = [
-  {
-    id: "art-namjune-01",
-    title: "TV 부처 (TV Buddha)",
-    artist: "백남준",
-    imageUrl: "https://img1.daumcdn.net/thumb/R1280x0.fpng/?fname=http://t1.daumcdn.net/brunch/service/user/cJfI/image/2pFDXEcofQLCOMMK1jfw2Yv2QwA.png",
-    statement: `1974년 처음 선보인 《TV 부처》는 폐쇄회로(CCTV) 카메라와 모니터, 그리고 그 앞에 앉아 화면을 응시하는 불상으로 구성된 백남준의 대표작이다. 카메라가 촬영한 불상의 모습이 실시간으로 모니터에 송출되고, 불상은 다시 화면 속 자신의 이미지를 바라보며 무한한 자기 반영의 피드백 루프를 만들어낸다.`
-  },
-  {
-    id: "art-namjune-02",
-    title: "다다익선 (The More, The Better)",
-    artist: "백남준",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/The_More%2C_The_Better_at_MMCA.jpg/800px-The_More%2C_The_Better_at_MMCA.jpg",
-    statement: `1003대의 모니터를 탑처럼 쌓아 올린 백남준의 거대한 비디오 조각이다. 한국의 개천절(10월 3일)을 상징하는 1003개의 모니터는 세계 각국의 영상들이 끊임없이 쏟아져 나오는 거대한 정보의 탑이다. 정보가 많을수록 좋다는 뜻의 '다다익선'을 제목으로 차용하였다.`
-  },
-  {
-    id: "art-namjune-03",
-    title: "전자 초개 (Electronic Superhighway)",
-    artist: "백남준",
-    imageUrl: "https://americanart.si.edu/sites/default/files/images/1995/1995.114_1b.jpg",
-    statement: `수백 개의 네온사인과 텔레비전 모니터로 구성된 대형 설치 작품으로, 미국의 지도를 형상화하고 있다. 각 주(State)의 문화를 상징하는 비디오 클립이 재생되며, 디지털 고속도로가 어떻게 지역적 경계를 허물고 사람들을 연결하는지를 은유적으로 보여준다.`
-  }
-];
-
-const MOCK_ARCHIVE_DATA = [
-  { id: 1, text: "> USER_391: 나는 이 디지털 파편 속에서 공허함을 느낀다." },
-  { id: 2, text: "> USER_102: 완벽하지 않은 해설이 나에게 빈 틈을 주었다." },
-  { id: 3, text: "> USER_884: 진실과 가상의 구분이 아직도 중요한가?" },
-  { id: 4, text: "> USER_001: 기계의 노이즈가 마치 비명처럼 들려." },
-  { id: 5, text: "> USER_772: 내가 남긴 흔적도 이 여백의 일부가 되겠지." },
-  { id: 6, text: "> USER_909: 에르곤과 파레르곤의 경계가 무너지고 있다." },
-  { id: 7, text: "> USER_112: 끊임없이 반복되는 영상 속에서 나를 본다." },
-];
-
 // --- TTS 자체 음성 왜곡 (청크 분할 기법) ---
 const speakText = (text, instability) => {
   if (!('speechSynthesis' in window)) return;
@@ -212,13 +179,13 @@ export default function App() {
   const [error, setError] = useState(null);
   
   const [showDevControls, setShowDevControls] = useState(false);
-  const [selectedArtworkId, setSelectedArtworkId] = useState(MOCK_ARTWORKS[0].id);
-  const [archiveData, setArchiveData] = useState(MOCK_ARCHIVE_DATA);
+  const [selectedArtworkId, setSelectedArtworkId] = useState(ARTWORKS[0].id);
+  const [archiveData, setArchiveData] = useState(ARCHIVE_SEED);
   const [sessionUserId] = useState(() => Math.floor(Math.random() * 900) + 100);
   
   const messagesEndRef = useRef(null);
 
-  const activeArtwork = useMemo(() => MOCK_ARTWORKS.find(a => a.id === selectedArtworkId), [selectedArtworkId]);
+  const activeArtwork = useMemo(() => ARTWORKS.find(a => a.id === selectedArtworkId), [selectedArtworkId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -243,7 +210,7 @@ export default function App() {
   const handleArtworkSelect = (id) => {
     if (id === selectedArtworkId) return;
     setSelectedArtworkId(id);
-    const newArt = MOCK_ARTWORKS.find(a => a.id === id);
+    const newArt = ARTWORKS.find(a => a.id === id);
     
     // 작품 변경 시 자연스러운 컨텍스트 전환 메시지
     const transitionMsg = `(관객이 <${newArt.title}> 작품을 가리키며 이 작품에 대해 이야기하고자 합니다.)`;
@@ -573,7 +540,7 @@ export default function App() {
               {/* Artwork Selection List */}
               <div className="flex flex-col gap-2">
                 <h3 className="text-[10px] font-mono text-[#666] uppercase tracking-widest border-b border-[#222] pb-1 mb-2">Exhibition List</h3>
-                {MOCK_ARTWORKS.map(art => (
+                {ARTWORKS.map(art => (
                   <button 
                     key={art.id}
                     onClick={() => handleArtworkSelect(art.id)}
@@ -584,7 +551,7 @@ export default function App() {
                     <img src={art.imageUrl} className="w-12 h-12 object-cover grayscale brightness-75" alt={art.title} />
                     <div className="flex-1 overflow-hidden">
                       <p className="text-xs font-semibold text-white truncate">{art.title}</p>
-                      <p className="text-[10px] text-[#888]">{art.artist}</p>
+                      <p className="text-[10px] text-[#888]">{art.artist} · {art.year}</p>
                     </div>
                   </button>
                 ))}
