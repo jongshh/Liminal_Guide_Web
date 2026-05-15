@@ -1,1 +1,11 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+@layer base {
+  body {
+    font-family: 'VT323', monospace;
+    background-color: #050505;
+    color: #4af626;
+    /* Terminal green */
+  }
+}
